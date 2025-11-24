@@ -1,0 +1,39 @@
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.env
+.env.*
+
+# Virtual environments
+.venv/
+venv/
+backend/venv/
+frontend/backend/venv/
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+frontend/node_modules/
+
+# Logs
+*.log
+logs/
+
+# Tooling
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs
+frontend/public/data.generated.json
+coverage/
+.next/
