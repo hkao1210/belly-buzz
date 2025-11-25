@@ -1,0 +1,105 @@
+.filter-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filter-tabs__categories {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filter-tabs__categories::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-tabs__tab {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.filter-tabs__tab:hover {
+  background: #fef3e8;
+  border-color: #fdba74;
+  color: #1f1f1f;
+}
+
+.filter-tabs__tab--active {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25);
+}
+
+.filter-tabs__tab--active:hover {
+  background: #dc4a08;
+  border-color: #dc4a08;
+  color: #fff;
+}
+
+.filter-tabs__emoji {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.filter-tabs__label {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.filter-tabs__controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.25rem;
+}
+
+.filter-tabs__count {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.filter-tabs__sort {
+  padding: 0.5rem 0.85rem;
+  padding-right: 2rem;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 100px;
+  color: #374151;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+.filter-tabs__sort:hover {
+  border-color: #d1d5db;
+  background-color: #f9fafb;
+}
+
+.filter-tabs__sort:focus {
+  outline: none;
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
