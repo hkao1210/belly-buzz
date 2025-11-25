@@ -7,13 +7,38 @@
       "buzz_score": 14.2,
       "sentiment": 9.2,
       "mentions": 5,
-      "summary": "Khao soi special keeps Toronto's downtown crowd lined up.",
+      "summary": "Khao soi special keeps Toronto's downtown crowd lined up. The curry depth is unreal and worth every minute in line.",
       "sources": ["Reddit", "Toronto Life"],
+      "cuisine_type": "Thai",
+      "category": ["trending", "thai"],
+      "price_range": 2,
+      "user_likes": 234,
+      "user_saves": 89,
+      "is_new": false,
+      "hours": { "open": "11:30 AM", "close": "10:00 PM" },
       "location": {
         "lat": 43.6479,
         "lng": -79.3887,
         "address": "18 Duncan St, Toronto, ON M5H 3G8"
-      }
+      },
+      "comments": [
+        {
+          "id": "c1",
+          "userId": "u1",
+          "userName": "FoodieJen",
+          "text": "The khao soi here is legitimately the best I've had outside of Thailand. Go early to avoid the lunch rush!",
+          "timestamp": "2025-11-23T14:30:00-05:00",
+          "likes": 12
+        },
+        {
+          "id": "c2",
+          "userId": "u2",
+          "userName": "TorontoBites",
+          "text": "Finally tried it after seeing it everywhere. Did not disappoint. That crispy noodle topping 🤤",
+          "timestamp": "2025-11-22T19:15:00-05:00",
+          "likes": 8
+        }
+      ]
     },
     {
       "id": "seven-lives-tacos",
@@ -21,13 +46,30 @@
       "buzz_score": 12.7,
       "sentiment": 9.7,
       "mentions": 3,
-      "summary": "Baja-style fish tacos still rule Kensington Market.",
+      "summary": "Baja-style fish tacos still rule Kensington Market. Fresh, crispy, and perfectly seasoned every time.",
       "sources": ["Reddit"],
+      "cuisine_type": "Mexican",
+      "category": ["trending", "mexican", "seafood"],
+      "price_range": 1,
+      "user_likes": 312,
+      "user_saves": 156,
+      "is_new": false,
+      "hours": { "open": "12:00 PM", "close": "7:00 PM" },
       "location": {
         "lat": 43.6543,
         "lng": -79.4005,
         "address": "69 Kensington Ave, Toronto, ON M5T 2K2"
-      }
+      },
+      "comments": [
+        {
+          "id": "c3",
+          "userId": "u3",
+          "userName": "KensingtonLocal",
+          "text": "Been coming here for years. Consistency is key and they never miss.",
+          "timestamp": "2025-11-24T09:00:00-05:00",
+          "likes": 5
+        }
+      ]
     },
     {
       "id": "the-burgers-priest",
@@ -35,13 +77,365 @@
       "buzz_score": 11.5,
       "sentiment": 8.5,
       "mentions": 3,
-      "summary": "Secret-menu double doubles spark another smashburger wave.",
-      "sources": ["Reddit", "Mock: Liu"],
+      "summary": "Secret-menu double doubles spark another smashburger wave. The Vatican-style bun is peak comfort food.",
+      "sources": ["Reddit", "BlogTO"],
+      "cuisine_type": "Burgers",
+      "category": ["trending", "burgers"],
+      "price_range": 2,
+      "user_likes": 189,
+      "user_saves": 67,
+      "is_new": false,
+      "hours": { "open": "11:00 AM", "close": "9:00 PM" },
       "location": {
         "lat": 43.6667,
         "lng": -79.3156,
         "address": "1636 Queen St E, Toronto, ON M4L 1G3"
-      }
+      },
+      "comments": [
+        {
+          "id": "c4",
+          "userId": "u4",
+          "userName": "BurgerFan416",
+          "text": "The Option is the way to go. Trust me on this one.",
+          "timestamp": "2025-11-21T18:45:00-05:00",
+          "likes": 15
+        }
+      ]
+    },
+    {
+      "id": "ramen-isshin",
+      "name": "Ramen Isshin",
+      "buzz_score": 11.2,
+      "sentiment": 9.1,
+      "mentions": 4,
+      "summary": "Rich tonkotsu broth that's been simmering for 20+ hours. The chashu melts in your mouth.",
+      "sources": ["Reddit", "Yelp"],
+      "cuisine_type": "Japanese",
+      "category": ["trending", "ramen"],
+      "price_range": 2,
+      "user_likes": 276,
+      "user_saves": 134,
+      "is_new": false,
+      "hours": { "open": "11:30 AM", "close": "10:30 PM" },
+      "location": {
+        "lat": 43.6598,
+        "lng": -79.3801,
+        "address": "421 College St, Toronto, ON M5T 1T1"
+      },
+      "comments": [
+        {
+          "id": "c5",
+          "userId": "u5",
+          "userName": "RamenObsessed",
+          "text": "Best ramen in Toronto, no debate. The black garlic oil is everything.",
+          "timestamp": "2025-11-23T20:00:00-05:00",
+          "likes": 22
+        },
+        {
+          "id": "c6",
+          "userId": "u6",
+          "userName": "NoodleLover",
+          "text": "Went here on a cold day. Perfect bowl of ramen. Will be back!",
+          "timestamp": "2025-11-22T13:30:00-05:00",
+          "likes": 9
+        }
+      ]
+    },
+    {
+      "id": "pizzeria-libretto",
+      "name": "Pizzeria Libretto",
+      "buzz_score": 10.8,
+      "sentiment": 9.0,
+      "mentions": 3,
+      "summary": "Neapolitan pizza perfection with a blistered, chewy crust straight from the wood-fired oven.",
+      "sources": ["Reddit", "Toronto Life"],
+      "cuisine_type": "Italian",
+      "category": ["pizza", "italian"],
+      "price_range": 2,
+      "user_likes": 198,
+      "user_saves": 87,
+      "is_new": false,
+      "hours": { "open": "12:00 PM", "close": "11:00 PM" },
+      "location": {
+        "lat": 43.6487,
+        "lng": -79.4209,
+        "address": "221 Ossington Ave, Toronto, ON M6J 2Z8"
+      },
+      "comments": [
+        {
+          "id": "c7",
+          "userId": "u7",
+          "userName": "PizzaPurist",
+          "text": "The Margherita here is textbook perfect. San Marzano tomatoes make all the difference.",
+          "timestamp": "2025-11-20T19:00:00-05:00",
+          "likes": 11
+        }
+      ]
+    },
+    {
+      "id": "kinka-izakaya",
+      "name": "Kinka Izakaya",
+      "buzz_score": 10.3,
+      "sentiment": 8.8,
+      "mentions": 4,
+      "summary": "Late-night izakaya vibes with killer takoyaki and creative small plates. Perfect for groups.",
+      "sources": ["Reddit"],
+      "cuisine_type": "Japanese",
+      "category": ["sushi"],
+      "price_range": 2,
+      "user_likes": 167,
+      "user_saves": 78,
+      "is_new": false,
+      "hours": { "open": "5:00 PM", "close": "1:00 AM" },
+      "location": {
+        "lat": 43.6604,
+        "lng": -79.3799,
+        "address": "559 Bloor St W, Toronto, ON M5S 1Y6"
+      },
+      "comments": []
+    },
+    {
+      "id": "banh-mi-boys",
+      "name": "Banh Mi Boys",
+      "buzz_score": 9.8,
+      "sentiment": 8.7,
+      "mentions": 3,
+      "summary": "Fusion banh mi with Korean-inspired fillings. The kimchi fries are addictive.",
+      "sources": ["Reddit", "BlogTO"],
+      "cuisine_type": "Vietnamese",
+      "category": ["vietnamese", "korean"],
+      "price_range": 1,
+      "user_likes": 145,
+      "user_saves": 52,
+      "is_new": false,
+      "hours": { "open": "11:00 AM", "close": "9:00 PM" },
+      "location": {
+        "lat": 43.6533,
+        "lng": -79.4018,
+        "address": "392 Queen St W, Toronto, ON M5V 2A8"
+      },
+      "comments": [
+        {
+          "id": "c8",
+          "userId": "u8",
+          "userName": "StreetFoodFan",
+          "text": "Korean fried chicken banh mi changed my life. Not exaggerating.",
+          "timestamp": "2025-11-19T12:30:00-05:00",
+          "likes": 18
+        }
+      ]
+    },
+    {
+      "id": "lahore-tikka-house",
+      "name": "Lahore Tikka House",
+      "buzz_score": 9.5,
+      "sentiment": 9.3,
+      "mentions": 2,
+      "summary": "Authentic Pakistani flavors in a no-frills setting. The butter chicken and naan are legendary.",
+      "sources": ["Reddit"],
+      "cuisine_type": "Indian",
+      "category": ["indian"],
+      "price_range": 1,
+      "user_likes": 203,
+      "user_saves": 91,
+      "is_new": false,
+      "hours": { "open": "12:00 PM", "close": "12:00 AM" },
+      "location": {
+        "lat": 43.6623,
+        "lng": -79.3225,
+        "address": "1365 Gerrard St E, Toronto, ON M4L 1Z3"
+      },
+      "comments": [
+        {
+          "id": "c9",
+          "userId": "u9",
+          "userName": "SpiceLover",
+          "text": "If you know, you know. This place is an institution.",
+          "timestamp": "2025-11-18T21:00:00-05:00",
+          "likes": 25
+        }
+      ]
+    },
+    {
+      "id": "santouka-ramen",
+      "name": "Santouka Ramen",
+      "buzz_score": 9.2,
+      "sentiment": 8.9,
+      "mentions": 3,
+      "summary": "Hokkaido-style shio ramen with a delicate, milky broth. The pork cheek topping is a must.",
+      "sources": ["Reddit"],
+      "cuisine_type": "Japanese",
+      "category": ["ramen"],
+      "price_range": 2,
+      "user_likes": 156,
+      "user_saves": 68,
+      "is_new": false,
+      "hours": { "open": "11:30 AM", "close": "9:30 PM" },
+      "location": {
+        "lat": 43.6572,
+        "lng": -79.3839,
+        "address": "91 Dundas St E, Toronto, ON M5B 2C2"
+      },
+      "comments": []
+    },
+    {
+      "id": "gusto-101",
+      "name": "Gusto 101",
+      "buzz_score": 8.9,
+      "sentiment": 8.6,
+      "mentions": 2,
+      "summary": "Italian comfort food in a trendy Portland St setting. The carbonara is silky smooth.",
+      "sources": ["Toronto Life"],
+      "cuisine_type": "Italian",
+      "category": ["italian"],
+      "price_range": 3,
+      "user_likes": 134,
+      "user_saves": 56,
+      "is_new": false,
+      "hours": { "open": "5:00 PM", "close": "11:00 PM" },
+      "location": {
+        "lat": 43.6423,
+        "lng": -79.4027,
+        "address": "101 Portland St, Toronto, ON M5V 2N3"
+      },
+      "comments": []
+    },
+    {
+      "id": "chungchun-rice-dog",
+      "name": "Chungchun Rice Dog",
+      "buzz_score": 8.7,
+      "sentiment": 8.4,
+      "mentions": 3,
+      "summary": "Korean corn dogs with stretchy mozzarella and crunchy potato coating. Instagram-worthy bites.",
+      "sources": ["Reddit", "TikTok"],
+      "cuisine_type": "Korean",
+      "category": ["korean"],
+      "price_range": 1,
+      "user_likes": 289,
+      "user_saves": 123,
+      "is_new": true,
+      "hours": { "open": "11:00 AM", "close": "10:00 PM" },
+      "location": {
+        "lat": 43.6569,
+        "lng": -79.3861,
+        "address": "310 Yonge St, Toronto, ON M5B 1R4"
+      },
+      "comments": [
+        {
+          "id": "c10",
+          "userId": "u10",
+          "userName": "ViralFoodHunter",
+          "text": "Finally tried it! The cheese pull is insane. Worth the hype.",
+          "timestamp": "2025-11-24T08:30:00-05:00",
+          "likes": 34
+        }
+      ]
+    },
+    {
+      "id": "jollibee",
+      "name": "Jollibee",
+      "buzz_score": 8.5,
+      "sentiment": 8.2,
+      "mentions": 4,
+      "summary": "Filipino fast food chain with cult-favorite Chickenjoy and sweet spaghetti. Comfort food at its finest.",
+      "sources": ["Reddit"],
+      "cuisine_type": "Filipino",
+      "category": [],
+      "price_range": 1,
+      "user_likes": 312,
+      "user_saves": 89,
+      "is_new": false,
+      "hours": { "open": "10:00 AM", "close": "11:00 PM" },
+      "location": {
+        "lat": 43.7735,
+        "lng": -79.4143,
+        "address": "5000 Yonge St, Toronto, ON M2N 7E9"
+      },
+      "comments": [
+        {
+          "id": "c11",
+          "userId": "u11",
+          "userName": "ChickenjoyFan",
+          "text": "Chickenjoy with gravy hits different. Don't knock it till you try it!",
+          "timestamp": "2025-11-23T16:00:00-05:00",
+          "likes": 28
+        }
+      ]
+    },
+    {
+      "id": "miku-toronto",
+      "name": "Miku Toronto",
+      "buzz_score": 8.3,
+      "sentiment": 9.4,
+      "mentions": 2,
+      "summary": "Upscale aburi sushi with flame-seared precision. A special occasion destination.",
+      "sources": ["Toronto Life"],
+      "cuisine_type": "Japanese",
+      "category": ["sushi"],
+      "price_range": 4,
+      "user_likes": 167,
+      "user_saves": 98,
+      "is_new": false,
+      "hours": { "open": "11:30 AM", "close": "10:00 PM" },
+      "location": {
+        "lat": 43.6418,
+        "lng": -79.3768,
+        "address": "10 Bay St, Toronto, ON M5J 2R8"
+      },
+      "comments": []
+    },
+    {
+      "id": "campechano",
+      "name": "Campechano",
+      "buzz_score": 8.1,
+      "sentiment": 8.8,
+      "mentions": 2,
+      "summary": "No-frills tacos with house-made tortillas. The carnitas and suadero are standouts.",
+      "sources": ["Reddit"],
+      "cuisine_type": "Mexican",
+      "category": ["mexican"],
+      "price_range": 1,
+      "user_likes": 145,
+      "user_saves": 67,
+      "is_new": false,
+      "hours": { "open": "11:00 AM", "close": "10:00 PM" },
+      "location": {
+        "lat": 43.6534,
+        "lng": -79.4012,
+        "address": "184 Augusta Ave, Toronto, ON M5T 2L4"
+      },
+      "comments": []
+    },
+    {
+      "id": "rasta-pasta",
+      "name": "Rasta Pasta",
+      "buzz_score": 7.9,
+      "sentiment": 8.5,
+      "mentions": 3,
+      "summary": "Caribbean-Italian fusion that sounds wild but works. The jerk chicken pasta is a revelation.",
+      "sources": ["Reddit", "TikTok"],
+      "cuisine_type": "Caribbean",
+      "category": [],
+      "price_range": 2,
+      "user_likes": 198,
+      "user_saves": 87,
+      "is_new": true,
+      "hours": { "open": "12:00 PM", "close": "9:00 PM" },
+      "location": {
+        "lat": 43.6567,
+        "lng": -79.4301,
+        "address": "61 Ossington Ave, Toronto, ON M6J 2Y9"
+      },
+      "comments": [
+        {
+          "id": "c12",
+          "userId": "u12",
+          "userName": "FusionFinder",
+          "text": "Skeptical at first but the flavors just work. Now I'm obsessed.",
+          "timestamp": "2025-11-22T14:00:00-05:00",
+          "likes": 19
+        }
+      ]
     }
   ]
 }

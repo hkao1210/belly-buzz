@@ -1,0 +1,1 @@
+export { useRestaurants } from './useRestaurants';
