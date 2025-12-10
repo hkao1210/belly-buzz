@@ -1,105 +1,96 @@
-import type { Restaurant } from '../types';
-import { getPriceDisplay } from '../utils';
-import './RestaurantCard.css';
+import { Star, MapPin, DollarSign, ChefHat } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import type { Restaurant } from '@/types';
 
-type RestaurantCardProps = {
+interface RestaurantCardProps {
   restaurant: Restaurant;
-  isSelected: boolean;
-  onSelect: () => void;
-  onLike: () => void;
-  onSave: () => void;
-  isLiked?: boolean;
-  isSaved?: boolean;
-  rank?: number;
-};
+  onClick?: () => void;
+}
 
-export function RestaurantCard({
-  restaurant,
-  isSelected,
-  onSelect,
-  onLike,
-  onSave,
-  isLiked = false,
-  isSaved = false,
-  rank,
-}: RestaurantCardProps) {
+/**
+ * Price tier display component.
+ */
+function PriceTier({ tier }: { tier: number }) {
   return (
-    <article
-      className={`restaurant-card ${isSelected ? 'restaurant-card--selected' : ''}`}
-      onClick={onSelect}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onSelect()}
+    <span className="flex items-center gap-0.5 text-sm font-bold">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <DollarSign
+          key={i}
+          className={`h-3.5 w-3.5 ${
+            i < tier ? 'text-foreground' : 'text-muted-foreground/30'
+          }`}
+        />
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Star rating display component.
+ */
+function Rating({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+      <span className="font-bold">{rating.toFixed(1)}</span>
+    </div>
+  );
+}
+
+/**
+ * Restaurant card component with Neobrutalism styling.
+ * Displays restaurant info in a bold, eye-catching card format.
+ */
+export function RestaurantCard({ restaurant, onClick }: RestaurantCardProps) {
+  return (
+    <Card
+      className="cursor-pointer transition-transform hover:translate-x-1 hover:-translate-y-1"
+      onClick={onClick}
     >
-      {rank && rank <= 3 && (
-        <div className={`restaurant-card__rank restaurant-card__rank--${rank}`}>
-          #{rank}
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-lg leading-tight">{restaurant.name}</CardTitle>
+          <Rating rating={restaurant.rating} />
         </div>
-      )}
-      
-      {restaurant.is_new && (
-        <span className="restaurant-card__badge restaurant-card__badge--new">NEW</span>
-      )}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">{restaurant.address}</span>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Cuisine Tags */}
+        <div className="flex flex-wrap gap-1.5">
+          {restaurant.cuisine_tags.map((tag) => (
+            <Badge key={tag} variant="default" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+        </div>
 
-      <div className="restaurant-card__header">
-        <div className="restaurant-card__title-row">
-          <h3 className="restaurant-card__name">{restaurant.name}</h3>
-          <div className="restaurant-card__buzz">
-            <span className="restaurant-card__buzz-icon">🔥</span>
-            <span className="restaurant-card__buzz-score">{restaurant.buzz_score.toFixed(1)}</span>
-          </div>
+        {/* Price & Meta */}
+        <div className="flex items-center justify-between">
+          <PriceTier tier={restaurant.price_tier} />
         </div>
-        
-        <div className="restaurant-card__meta">
-          <span className="restaurant-card__cuisine">{restaurant.cuisine_type}</span>
-          <span className="restaurant-card__price">{getPriceDisplay(restaurant.price_range)}</span>
-        </div>
-      </div>
 
-      <p className="restaurant-card__summary">{restaurant.summary}</p>
+        {/* Review Summary */}
+        {restaurant.review && (
+          <p className="text-sm leading-relaxed text-muted-foreground line-clamp-2">
+            {restaurant.review.summary}
+          </p>
+        )}
 
-      <div className="restaurant-card__stats">
-        <div className="restaurant-card__stat">
-          <span className="restaurant-card__stat-icon">❤️</span>
-          <span>{restaurant.sentiment.toFixed(1)}/10</span>
-        </div>
-        <div className="restaurant-card__stat">
-          <span className="restaurant-card__stat-icon">💬</span>
-          <span>{restaurant.mentions}</span>
-        </div>
-        {restaurant.sources && restaurant.sources.length > 0 && (
-          <div className="restaurant-card__stat">
-            <span className="restaurant-card__stat-icon">📰</span>
-            <span>{restaurant.sources.length}</span>
+        {/* Recommended Dishes */}
+        {restaurant.review?.recommended_dishes && restaurant.review.recommended_dishes.length > 0 && (
+          <div className="flex items-start gap-2 pt-1">
+            <ChefHat className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Try:</span>{' '}
+              {restaurant.review.recommended_dishes.slice(0, 3).join(', ')}
+            </p>
           </div>
         )}
-      </div>
-
-      <div className="restaurant-card__actions">
-        <button
-          className={`restaurant-card__action ${isLiked ? 'restaurant-card__action--active' : ''}`}
-          onClick={(e) => { e.stopPropagation(); onLike(); }}
-          title="Like"
-        >
-          <span>{isLiked ? '❤️' : '🤍'}</span>
-          <span>{restaurant.user_likes}</span>
-        </button>
-        <button
-          className={`restaurant-card__action ${isSaved ? 'restaurant-card__action--active' : ''}`}
-          onClick={(e) => { e.stopPropagation(); onSave(); }}
-          title="Save"
-        >
-          <span>{isSaved ? '🔖' : '📌'}</span>
-          <span>{restaurant.user_saves}</span>
-        </button>
-        <button
-          className="restaurant-card__action"
-          onClick={(e) => { e.stopPropagation(); navigator.share?.({ title: restaurant.name, text: restaurant.summary }); }}
-          title="Share"
-        >
-          <span>🔗</span>
-        </button>
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   );
 }

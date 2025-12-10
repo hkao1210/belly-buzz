@@ -1,219 +1,113 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import axios from 'axios';
-import type { Restaurant, CuisineCategory, SortOption, DataResponse, Comment } from '../types';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import type { SearchResponse, SearchParams } from '@/types';
 
-const DATA_SOURCE = import.meta.env.VITE_TRENDING_DATA_URL ?? '/data.json';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-type UseRestaurantsReturn = {
-  restaurants: Restaurant[];
-  filteredRestaurants: Restaurant[];
-  selectedRestaurant: Restaurant | null;
-  isLoading: boolean;
-  error: string | null;
-  lastRun: string | null;
-  totalMentions: number;
-  activeCategory: CuisineCategory;
-  sortBy: SortOption;
-  searchQuery: string;
-  likedRestaurants: Set<string>;
-  savedRestaurants: Set<string>;
-  selectRestaurant: (id: string) => void;
-  setActiveCategory: (category: CuisineCategory) => void;
-  setSortBy: (sort: SortOption) => void;
-  setSearchQuery: (query: string) => void;
-  toggleLike: (id: string) => void;
-  toggleSave: (id: string) => void;
-  addComment: (restaurantId: string, text: string) => void;
-};
+/**
+ * Fetch restaurants from the API with search params.
+ */
+async function fetchRestaurants(params: SearchParams): Promise<SearchResponse> {
+  const url = new URL(`${API_BASE}/search`);
+  
+  if (params.q) url.searchParams.set('q', params.q);
+  if (params.price_min) url.searchParams.set('price_min', params.price_min.toString());
+  if (params.price_max) url.searchParams.set('price_max', params.price_max.toString());
+  if (params.cuisine?.length) {
+    params.cuisine.forEach(c => url.searchParams.append('cuisine', c));
+  }
+  if (params.sort_by) url.searchParams.set('sort_by', params.sort_by);
+  if (params.sort_order) url.searchParams.set('sort_order', params.sort_order);
 
-export function useRestaurants(): UseRestaurantsReturn {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [lastRun, setLastRun] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<CuisineCategory>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('buzz');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [likedRestaurants, setLikedRestaurants] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('beli-buzz-liked');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    throw new Error('Failed to fetch restaurants');
+  }
+  return response.json();
+}
+
+/**
+ * Fetch trending search queries.
+ */
+async function fetchTrending(): Promise<string[]> {
+  const response = await fetch(`${API_BASE}/trending`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch trending');
+  }
+  return response.json();
+}
+
+/**
+ * Parse URL search params into SearchParams object.
+ */
+function parseSearchParams(searchParams: URLSearchParams): SearchParams {
+  return {
+    q: searchParams.get('q') || undefined,
+    price_min: searchParams.get('price_min') ? Number(searchParams.get('price_min')) : undefined,
+    price_max: searchParams.get('price_max') ? Number(searchParams.get('price_max')) : undefined,
+    cuisine: searchParams.getAll('cuisine').length > 0 ? searchParams.getAll('cuisine') : undefined,
+    sort_by: (searchParams.get('sort_by') as SearchParams['sort_by']) || undefined,
+    sort_order: (searchParams.get('sort_order') as SearchParams['sort_order']) || undefined,
+  };
+}
+
+/**
+ * Hook to fetch restaurants based on URL search params.
+ * Uses TanStack Query for caching and state management.
+ */
+export function useRestaurants() {
+  const [searchParams] = useSearchParams();
+  const params = parseSearchParams(searchParams);
+
+  return useQuery({
+    queryKey: ['restaurants', params],
+    queryFn: () => fetchRestaurants(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
-  const [savedRestaurants, setSavedRestaurants] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('beli-buzz-saved');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  });
+}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get<DataResponse>(DATA_SOURCE, {
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-        
-        // Add trending rank
-        const sorted = [...response.data.restaurants]
-          .sort((a, b) => b.buzz_score - a.buzz_score)
-          .map((r, i) => ({ ...r, trending_rank: i + 1 }));
-        
-        setRestaurants(sorted);
-        setLastRun(response.data.date);
-        setSelectedId(sorted[0]?.id ?? null);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        setError('Unable to fetch the latest buzz. Showing the last cached version.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // Persist likes/saves to localStorage
-  useEffect(() => {
-    localStorage.setItem('beli-buzz-liked', JSON.stringify([...likedRestaurants]));
-  }, [likedRestaurants]);
-
-  useEffect(() => {
-    localStorage.setItem('beli-buzz-saved', JSON.stringify([...savedRestaurants]));
-  }, [savedRestaurants]);
-
-  const filteredRestaurants = useMemo(() => {
-    let result = [...restaurants];
-
-    // Filter by category
-    if (activeCategory === 'trending') {
-      result = result.slice(0, 10);
-    } else if (activeCategory !== 'all') {
-      result = result.filter(r => 
-        r.category.includes(activeCategory) || 
-        r.cuisine_type.toLowerCase() === activeCategory
-      );
-    }
-
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(r =>
-        r.name.toLowerCase().includes(query) ||
-        r.summary.toLowerCase().includes(query) ||
-        r.cuisine_type.toLowerCase().includes(query)
-      );
-    }
-
-    // Sort
-    switch (sortBy) {
-      case 'sentiment':
-        result.sort((a, b) => b.sentiment - a.sentiment);
-        break;
-      case 'mentions':
-        result.sort((a, b) => b.mentions - a.mentions);
-        break;
-      case 'likes':
-        result.sort((a, b) => b.user_likes - a.user_likes);
-        break;
-      case 'newest':
-        result.sort((a, b) => (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0));
-        break;
-      case 'buzz':
-      default:
-        result.sort((a, b) => b.buzz_score - a.buzz_score);
-    }
-
-    return result;
-  }, [restaurants, activeCategory, sortBy, searchQuery]);
-
-  const selectedRestaurant = useMemo(() => 
-    restaurants.find(r => r.id === selectedId) ?? restaurants[0] ?? null,
-    [restaurants, selectedId]
-  );
-
-  const totalMentions = useMemo(() => 
-    restaurants.reduce((sum, r) => sum + r.mentions, 0),
-    [restaurants]
-  );
-
-  const selectRestaurant = useCallback((id: string) => {
-    setSelectedId(id);
-  }, []);
-
-  const toggleLike = useCallback((id: string) => {
-    setLikedRestaurants(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-        // Decrement like count in restaurant
-        setRestaurants(rs => rs.map(r => 
-          r.id === id ? { ...r, user_likes: Math.max(0, r.user_likes - 1) } : r
-        ));
-      } else {
-        next.add(id);
-        // Increment like count in restaurant
-        setRestaurants(rs => rs.map(r => 
-          r.id === id ? { ...r, user_likes: r.user_likes + 1 } : r
-        ));
-      }
-      return next;
-    });
-  }, []);
-
-  const toggleSave = useCallback((id: string) => {
-    setSavedRestaurants(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-        setRestaurants(rs => rs.map(r => 
-          r.id === id ? { ...r, user_saves: Math.max(0, r.user_saves - 1) } : r
-        ));
-      } else {
-        next.add(id);
-        setRestaurants(rs => rs.map(r => 
-          r.id === id ? { ...r, user_saves: r.user_saves + 1 } : r
-        ));
-      }
-      return next;
-    });
-  }, []);
-
-  const addComment = useCallback((restaurantId: string, text: string) => {
-    const newComment: Comment = {
-      id: `comment-${Date.now()}`,
-      userId: 'guest',
-      userName: 'Guest User',
-      text,
-      timestamp: new Date().toISOString(),
-      likes: 0,
-    };
+/**
+ * Hook to update search params in URL.
+ * Returns a function to update params while preserving existing ones.
+ */
+export function useSearchFilters() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const updateParams = (updates: Partial<SearchParams>) => {
+    const newParams = new URLSearchParams(searchParams);
     
-    setRestaurants(rs => rs.map(r => 
-      r.id === restaurantId 
-        ? { ...r, comments: [newComment, ...r.comments] }
-        : r
-    ));
-  }, []);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') {
+        newParams.delete(key);
+      } else if (Array.isArray(value)) {
+        newParams.delete(key);
+        value.forEach(v => newParams.append(key, v));
+      } else {
+        newParams.set(key, String(value));
+      }
+    });
+    
+    setSearchParams(newParams);
+  };
+
+  const clearParams = () => {
+    setSearchParams(new URLSearchParams());
+  };
 
   return {
-    restaurants,
-    filteredRestaurants,
-    selectedRestaurant,
-    isLoading,
-    error,
-    lastRun,
-    totalMentions,
-    activeCategory,
-    sortBy,
-    searchQuery,
-    likedRestaurants,
-    savedRestaurants,
-    selectRestaurant,
-    setActiveCategory,
-    setSortBy,
-    setSearchQuery,
-    toggleLike,
-    toggleSave,
-    addComment,
+    params: parseSearchParams(searchParams),
+    updateParams,
+    clearParams,
   };
+}
+
+/**
+ * Hook to fetch trending search queries.
+ */
+export function useTrending() {
+  return useQuery({
+    queryKey: ['trending'],
+    queryFn: fetchTrending,
+    staleTime: 1000 * 60 * 30, // 30 minutes
+  });
 }

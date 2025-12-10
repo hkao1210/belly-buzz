@@ -1,8 +1,20 @@
-praw
-requests
+# API Framework
+fastapi
+uvicorn[standard]
+pydantic
 python-dotenv
-boto3
-googlemaps
-huggingface_hub
-google-generativeai
+
+# Scraping & Ingestion (Night Shift)
+crawl4ai
+groq
 feedparser
+
+# Google Places API
+googlemaps
+
+# Embeddings & Vector Search
+sentence-transformers
+numpy
+
+# Database
+supabase
