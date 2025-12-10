@@ -9,7 +9,6 @@ class GooglePlaceData(BaseModel):
     place_id: str
     name: str
     address: str
-    neighborhood: Optional[str] = None
     city: str = "Toronto"
     latitude: float
     longitude: float

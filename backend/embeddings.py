@@ -79,10 +79,7 @@ class EmbeddingService:
         
         if restaurant.name:
             text_parts.append(restaurant.name)
-        
-        if restaurant.neighborhood:
-            text_parts.append(restaurant.neighborhood)
-        
+
         combined_text = " ".join(text_parts)
         
         if not combined_text.strip():

@@ -5,7 +5,7 @@ Real-time API for restaurant search and discovery.
 
 Features:
 - Semantic search with vector similarity (pgvector)
-- Filtering by price, cuisine, neighborhood
+- Filtering by price, cuisine
 - Sorting by buzz score, sentiment, rating
 - Trending restaurants endpoint
 """
@@ -123,7 +123,6 @@ MOCK_RESTAURANTS: List[RestaurantResponse] = [
         name="Pai Northern Thai Kitchen",
         slug="pai-northern-thai-kitchen",
         address="18 Duncan St, Toronto, ON M5H 3G8",
-        neighborhood="Entertainment District",
         latitude=43.6479,
         longitude=-79.3887,
         google_place_id="ChIJ_pai_mock_1",
@@ -151,7 +150,6 @@ MOCK_RESTAURANTS: List[RestaurantResponse] = [
         name="Seven Lives Tacos y Mariscos",
         slug="seven-lives-tacos",
         address="69 Kensington Ave, Toronto, ON M5T 2K2",
-        neighborhood="Kensington Market",
         latitude=43.6543,
         longitude=-79.4005,
         google_place_id="ChIJ_seven_mock_2",
@@ -179,7 +177,6 @@ MOCK_RESTAURANTS: List[RestaurantResponse] = [
         name="Ramen Isshin",
         slug="ramen-isshin",
         address="421 College St, Toronto, ON M5T 1T1",
-        neighborhood="Little Italy",
         latitude=43.6598,
         longitude=-79.3801,
         google_place_id="ChIJ_ramen_mock_3",
@@ -206,7 +203,6 @@ MOCK_RESTAURANTS: List[RestaurantResponse] = [
         name="Pizzeria Libretto",
         slug="pizzeria-libretto",
         address="221 Ossington Ave, Toronto, ON M6J 2Z8",
-        neighborhood="Ossington",
         latitude=43.6487,
         longitude=-79.4209,
         google_place_id="ChIJ_pizza_mock_4",
@@ -233,7 +229,6 @@ MOCK_RESTAURANTS: List[RestaurantResponse] = [
         name="Miku Toronto",
         slug="miku-toronto",
         address="10 Bay St, Toronto, ON M5J 2R8",
-        neighborhood="Harbourfront",
         latitude=43.6418,
         longitude=-79.3768,
         google_place_id="ChIJ_miku_mock_5",
@@ -260,7 +255,6 @@ MOCK_RESTAURANTS: List[RestaurantResponse] = [
         name="Lahore Tikka House",
         slug="lahore-tikka-house",
         address="1365 Gerrard St E, Toronto, ON M4L 1Z3",
-        neighborhood="Little India",
         latitude=43.6623,
         longitude=-79.3225,
         google_place_id="ChIJ_lahore_mock_6",
@@ -287,7 +281,6 @@ MOCK_RESTAURANTS: List[RestaurantResponse] = [
         name="Banh Mi Boys",
         slug="banh-mi-boys",
         address="392 Queen St W, Toronto, ON M5V 2A8",
-        neighborhood="Queen West",
         latitude=43.6489,
         longitude=-79.3960,
         google_place_id="ChIJ_banh_mock_7",
@@ -314,7 +307,6 @@ MOCK_RESTAURANTS: List[RestaurantResponse] = [
         name="Campechano",
         slug="campechano",
         address="184 Augusta Ave, Toronto, ON M5T 2L4",
-        neighborhood="Kensington Market",
         latitude=43.6534,
         longitude=-79.4012,
         google_place_id="ChIJ_campechano_mock_8",
@@ -355,7 +347,6 @@ async def search_supabase(
     price_min: Optional[int] = None,
     price_max: Optional[int] = None,
     cuisine: Optional[List[str]] = None,
-    neighborhood: Optional[str] = None,
     sort_by: SortBy = SortBy.BUZZ,
     sort_order: SortOrder = SortOrder.DESC,
     limit: int = 20,
@@ -363,7 +354,7 @@ async def search_supabase(
     """Perform search in Supabase."""
     if not supabase_client:
         return []
-    
+
     try:
         # If we have a query embedding, use vector search
         if query_embedding:
@@ -375,23 +366,20 @@ async def search_supabase(
                     "price_min": price_min,
                     "price_max": price_max,
                     "filter_city": CITY,
-                    "filter_neighborhood": neighborhood,
                 }
             ).execute()
             return result.data or []
-        
+
         # Otherwise, do a standard query with filters
         query = supabase_client.table("restaurants").select("*")
-        
+
         # Apply filters
         query = query.eq("city", CITY)
-        
+
         if price_min:
             query = query.gte("price_tier", price_min)
         if price_max:
             query = query.lte("price_tier", price_max)
-        if neighborhood:
-            query = query.eq("neighborhood", neighborhood)
         if cuisine:
             # Filter by cuisine tags (any match)
             query = query.contains("cuisine_tags", cuisine)
@@ -421,7 +409,6 @@ def db_row_to_response(row: dict) -> RestaurantResponse:
         name=row["name"],
         slug=row.get("slug"),
         address=row.get("address", ""),
-        neighborhood=row.get("neighborhood"),
         latitude=row.get("latitude", 0),
         longitude=row.get("longitude", 0),
         google_place_id=row.get("google_place_id"),
@@ -452,19 +439,18 @@ def filter_mock_data(
     price_min: Optional[int],
     price_max: Optional[int],
     cuisine: Optional[List[str]],
-    neighborhood: Optional[str],
     sort_by: SortBy,
     sort_order: SortOrder,
 ) -> List[RestaurantResponse]:
     """Filter and sort mock data."""
     results = MOCK_RESTAURANTS.copy()
-    
+
     # Price filter
     if price_min:
         results = [r for r in results if r.price_tier >= price_min]
     if price_max:
         results = [r for r in results if r.price_tier <= price_max]
-    
+
     # Cuisine filter
     if cuisine:
         cuisine_lower = [c.lower() for c in cuisine]
@@ -472,11 +458,7 @@ def filter_mock_data(
             r for r in results
             if any(tag.lower() in cuisine_lower for tag in r.cuisine_tags)
         ]
-    
-    # Neighborhood filter
-    if neighborhood:
-        results = [r for r in results if r.neighborhood and neighborhood.lower() in r.neighborhood.lower()]
-    
+
     # Simple text search
     if query:
         q_lower = query.lower()
@@ -491,11 +473,9 @@ def filter_mock_data(
                 score += 5
             if r.review and q_lower in r.review.summary.lower():
                 score += 3
-            if r.neighborhood and q_lower in r.neighborhood.lower():
-                score += 2
             if score > 0:
                 scored.append((score, r))
-        
+
         scored.sort(key=lambda x: x[0], reverse=True)
         results = [r for _, r in scored]
     
@@ -541,14 +521,13 @@ async def search_restaurants(
     price_min: Optional[int] = Query(default=None, ge=1, le=4),
     price_max: Optional[int] = Query(default=None, ge=1, le=4),
     cuisine: Optional[List[str]] = Query(default=None),
-    neighborhood: Optional[str] = Query(default=None),
     sort_by: SortBy = Query(default=SortBy.BUZZ, description="Sort field"),
     sort_order: SortOrder = Query(default=SortOrder.DESC, description="Sort order"),
     limit: int = Query(default=20, ge=1, le=100),
 ):
     """
     Search restaurants with semantic similarity and filters.
-    
+
     Examples:
     - "romantic Italian date spot"
     - "cheap late night tacos"
@@ -558,20 +537,19 @@ async def search_restaurants(
     if supabase_client:
         # Create embedding for semantic search
         query_embedding = embed_query(q) if q else None
-        
+
         raw_results = await search_supabase(
             query_embedding=query_embedding,
             price_min=price_min,
             price_max=price_max,
             cuisine=cuisine,
-            neighborhood=neighborhood,
             sort_by=sort_by,
             sort_order=sort_order,
             limit=limit,
         )
-        
+
         results = [db_row_to_response(row) for row in raw_results]
-        
+
         return SearchResponse(
             results=results,
             total=len(results),
@@ -580,15 +558,14 @@ async def search_restaurants(
                 "price_min": price_min,
                 "price_max": price_max,
                 "cuisine": cuisine,
-                "neighborhood": neighborhood,
                 "sort_by": sort_by.value,
                 "sort_order": sort_order.value,
             }
         )
-    
+
     # Fallback to mock data
-    results = filter_mock_data(q, price_min, price_max, cuisine, neighborhood, sort_by, sort_order)
-    
+    results = filter_mock_data(q, price_min, price_max, cuisine, sort_by, sort_order)
+
     return SearchResponse(
         results=results[:limit],
         total=len(results),
@@ -597,7 +574,6 @@ async def search_restaurants(
             "price_min": price_min,
             "price_max": price_max,
             "cuisine": cuisine,
-            "neighborhood": neighborhood,
             "sort_by": sort_by.value,
             "sort_order": sort_order.value,
         }
@@ -663,30 +639,6 @@ async def get_trending_queries():
         "Best Thai food",
         "Hidden gem restaurants",
         "Omakase experience",
-    ]
-
-
-@app.get("/neighborhoods", response_model=List[str])
-async def get_neighborhoods():
-    """Get list of Toronto neighborhoods with restaurants."""
-    if supabase_client:
-        try:
-            result = supabase_client.table("restaurants").select("neighborhood").eq("city", CITY).execute()
-            neighborhoods = list(set(r["neighborhood"] for r in result.data if r.get("neighborhood")))
-            return sorted(neighborhoods)
-        except Exception as e:
-            print(f"Neighborhoods fetch error: {e}")
-    
-    # Fallback
-    return [
-        "Downtown",
-        "Entertainment District",
-        "Harbourfront",
-        "Kensington Market",
-        "Little India",
-        "Little Italy",
-        "Ossington",
-        "Queen West",
     ]
 
 

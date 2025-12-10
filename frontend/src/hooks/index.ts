@@ -1,1 +1,7 @@
-export { useRestaurants, useSearchFilters, useTrending } from './useRestaurants';
+export {
+  useRestaurants,
+  useSearchFilters,
+  useTrending,
+  useTrendingRestaurants,
+  useCuisines,
+} from './useRestaurants';

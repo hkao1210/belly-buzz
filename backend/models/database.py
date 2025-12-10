@@ -47,7 +47,6 @@ class Restaurant(BaseModel):
 
     # Location
     address: str = ""
-    neighborhood: Optional[str] = None
     city: str = "Toronto"
     latitude: float = 0.0
     longitude: float = 0.0

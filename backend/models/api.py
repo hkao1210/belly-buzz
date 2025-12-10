@@ -20,7 +20,6 @@ class RestaurantResponse(BaseModel):
     slug: Optional[str] = None
 
     address: str
-    neighborhood: Optional[str] = None
     latitude: float
     longitude: float
     google_place_id: Optional[str] = None

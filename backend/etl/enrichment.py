@@ -19,18 +19,6 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-# Toronto neighborhoods for better context
-TORONTO_NEIGHBORHOODS = [
-    "Downtown", "Yorkville", "Kensington Market", "Queen West", "King West",
-    "Leslieville", "The Beaches", "Danforth", "Little Italy", "Little Portugal",
-    "Chinatown", "Koreatown", "Greektown", "Roncesvalles", "High Park",
-    "Annex", "Bloor West Village", "Junction", "Parkdale", "Liberty Village",
-    "Distillery District", "St. Lawrence Market", "Financial District",
-    "Entertainment District", "Harbourfront", "Cabbagetown", "Riverdale",
-    "North York", "Scarborough", "Etobicoke", "Midtown", "Yonge and Eglinton",
-]
-
-
 class GooglePlacesEnricher:
     """
     Enriches restaurant data using Google Places API.
@@ -55,25 +43,7 @@ class GooglePlacesEnricher:
         except Exception as e:
             logger.error(f"Failed to initialize Google Maps: {e}")
             return None
-    
-    def _extract_neighborhood(self, address: str) -> Optional[str]:
-        """Extract neighborhood from address or return None."""
-        address_lower = address.lower()
-        
-        for neighborhood in TORONTO_NEIGHBORHOODS:
-            if neighborhood.lower() in address_lower:
-                return neighborhood
-        
-        # Try to extract from address components
-        parts = address.split(',')
-        if len(parts) >= 2:
-            # Often neighborhood is in second part
-            potential = parts[1].strip()
-            if potential and not potential.startswith('ON') and not potential.startswith('Toronto'):
-                return potential
-        
-        return None
-    
+
     def find_place(
         self,
         restaurant_name: str,
@@ -128,13 +98,11 @@ class GooglePlacesEnricher:
                     photo_url = self._get_photo_url(photo_ref)
             
             address = place.get("formatted_address", "")
-            neighborhood = self._extract_neighborhood(address)
-            
+
             return GooglePlaceData(
                 place_id=place_id,
                 name=place.get("name", restaurant_name),
                 address=address,
-                neighborhood=neighborhood,
                 city=city,
                 latitude=place["geometry"]["location"]["lat"],
                 longitude=place["geometry"]["location"]["lng"],
@@ -247,7 +215,6 @@ if __name__ == "__main__":
             if place:
                 print(f"\n{place.name}")
                 print(f"  Address: {place.address}")
-                print(f"  Neighborhood: {place.neighborhood}")
                 print(f"  Rating: {place.rating} ({place.reviews_count} reviews)")
                 print(f"  Price Level: {place.price_level}")
                 print(f"  Coords: ({place.latitude}, {place.longitude})")
