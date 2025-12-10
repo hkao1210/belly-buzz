@@ -7,6 +7,10 @@ import {
   X,
   ArrowLeft,
   Loader2,
+  Flame,
+  Star,
+  TrendingUp,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +19,20 @@ import { RestaurantCard } from '@/components/RestaurantCard';
 import { RestaurantMap } from '@/components/RestaurantMap';
 import { useRestaurants, useSearchFilters } from '@/hooks';
 import { useState } from 'react';
-import type { Restaurant } from '@/types';
+import type { Restaurant, SearchParams } from '@/types';
+
+type SortOption = {
+  value: SearchParams['sort_by'];
+  label: string;
+  icon: React.ReactNode;
+};
+
+const SORT_OPTIONS: SortOption[] = [
+  { value: 'buzz_score', label: 'Buzz', icon: <Flame className="h-3 w-3" /> },
+  { value: 'rating', label: 'Rating', icon: <Star className="h-3 w-3" /> },
+  { value: 'viral_score', label: 'Viral', icon: <TrendingUp className="h-3 w-3" /> },
+  { value: 'total_mentions', label: 'Mentions', icon: <MessageCircle className="h-3 w-3" /> },
+];
 
 /**
  * Search results page with split view layout.
@@ -44,14 +61,19 @@ export function Search() {
     }
   };
 
+  const handleSortChange = (sortBy: SearchParams['sort_by']) => {
+    // Toggle sort order if same field, otherwise default to desc
+    const newOrder = params.sort_by === sortBy && params.sort_order === 'desc' ? 'asc' : 'desc';
+    updateParams({ sort_by: sortBy, sort_order: newOrder });
+  };
+
   const handleRestaurantClick = (restaurant: Restaurant) => {
     setSelectedRestaurantId(restaurant.id);
   };
 
   const activeFiltersCount =
     (params.price_min ? 1 : 0) +
-    (params.cuisine?.length || 0) +
-    (params.sort_by && params.sort_by !== 'rating' ? 1 : 0);
+    (params.cuisine?.length || 0);
 
   const restaurants = data?.results || [];
 
@@ -76,7 +98,7 @@ export function Search() {
               <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search restaurants..."
+                placeholder="Best ramen in Toronto..."
                 value={localQuery}
                 onChange={(e) => setLocalQuery(e.target.value)}
                 className="pl-10"
@@ -97,7 +119,29 @@ export function Search() {
 
         {/* Filter Bar */}
         <div className="mx-auto mt-3 flex max-w-7xl items-center gap-2 overflow-x-auto pb-1">
+          {/* Sort Options */}
+          <span className="text-xs font-medium text-muted-foreground mr-1">Sort:</span>
+          {SORT_OPTIONS.map((option) => (
+            <Badge
+              key={option.value}
+              variant={params.sort_by === option.value ? 'default' : 'neutral'}
+              className="cursor-pointer whitespace-nowrap gap-1"
+              onClick={() => handleSortChange(option.value)}
+            >
+              {option.icon}
+              {option.label}
+              {params.sort_by === option.value && (
+                <span className="text-[10px]">
+                  {params.sort_order === 'desc' ? '↓' : '↑'}
+                </span>
+              )}
+            </Badge>
+          ))}
+
+          <div className="w-px h-5 bg-border mx-1" />
+
           {/* Price Filters */}
+          <span className="text-xs font-medium text-muted-foreground mr-1">Price:</span>
           {[1, 2, 3, 4].map((tier) => (
             <Badge
               key={tier}
@@ -109,34 +153,11 @@ export function Search() {
             </Badge>
           ))}
 
-          {/* Sort Options */}
-          <Badge
-            variant={params.sort_by === 'rating' || !params.sort_by ? 'default' : 'neutral'}
-            className="cursor-pointer whitespace-nowrap"
-            onClick={() => updateParams({ sort_by: 'rating', sort_order: 'desc' })}
-          >
-            Top Rated
-          </Badge>
-          <Badge
-            variant={params.sort_by === 'price' && params.sort_order === 'asc' ? 'default' : 'neutral'}
-            className="cursor-pointer whitespace-nowrap"
-            onClick={() => updateParams({ sort_by: 'price', sort_order: 'asc' })}
-          >
-            Price: Low
-          </Badge>
-          <Badge
-            variant={params.sort_by === 'price' && params.sort_order === 'desc' ? 'default' : 'neutral'}
-            className="cursor-pointer whitespace-nowrap"
-            onClick={() => updateParams({ sort_by: 'price', sort_order: 'desc' })}
-          >
-            Price: High
-          </Badge>
-
           {/* Clear Filters */}
           {activeFiltersCount > 0 && (
             <Badge
               variant="neutral"
-              className="cursor-pointer whitespace-nowrap"
+              className="cursor-pointer whitespace-nowrap ml-2"
               onClick={clearParams}
             >
               <X className="mr-1 h-3 w-3" />

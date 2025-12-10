@@ -54,8 +54,8 @@ export function Landing() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-              AI-powered recommendations from real conversations. 
-              Find your next favorite spot based on what people are actually saying.
+              AI-powered Toronto restaurant recommendations from real conversations. 
+              Find your next favorite spot based on what people are actually saying on Reddit and food blogs.
             </p>
           </div>
 
@@ -66,7 +66,7 @@ export function Landing() {
                 <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Romantic Italian under $50..."
+                  placeholder="Best ramen in Toronto, hidden gems in Kensington..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="h-14 pl-12 text-lg"
