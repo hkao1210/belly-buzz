@@ -1,20 +1,30 @@
-# API Framework
-fastapi
-uvicorn[standard]
-pydantic
-python-dotenv
+# =============================================================================
+# Beli-Buzz Backend Dependencies
+# =============================================================================
 
-# Scraping & Ingestion (Night Shift)
-crawl4ai
-groq
-feedparser
+# API Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.25.0
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+
+# Database (Supabase with pgvector)
+supabase>=2.3.0
+
+# Scraping & Ingestion
+crawl4ai>=0.2.0
+praw>=7.7.0
+feedparser>=6.0.0
+
+# LLM (Groq for Llama inference)
+groq>=0.4.0
 
 # Google Places API
-googlemaps
+googlemaps>=4.10.0
 
-# Embeddings & Vector Search
-sentence-transformers
-numpy
+# Embeddings & Vector Search (local, no API key needed)
+sentence-transformers>=2.2.0
+numpy>=1.24.0
 
-# Database
-supabase
+# Utilities
+httpx>=0.26.0

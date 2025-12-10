@@ -1,0 +1,8 @@
+[project]
+name = "beli-buzz"
+version = "0.1.0"
+description = "Toronto restaurant buzz tracker"
+requires-python = ">=3.9"
+
+[tool.setuptools.packages.find]
+include = ["models*", "api*", "etl*"]
