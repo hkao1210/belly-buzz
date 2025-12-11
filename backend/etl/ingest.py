@@ -319,7 +319,10 @@ async def run_pipeline(
     if scrape_reddit:
         logger.info("Step 1a: Scraping Reddit...")
         reddit_scraper = RedditScraper()
-        if reddit_scraper.reddit:
+        # RedditScraper uses public JSON endpoints (no API key). Call scraper
+        # directly and handle failures — previous code expected a `reddit`
+        # attribute from a PRAW-based implementation which no longer exists.
+        try:
             reddit_content = reddit_scraper.scrape_all_toronto(
                 time_filter=time_filter,
                 limit_per_sub=limit_per_source,
@@ -327,8 +330,8 @@ async def run_pipeline(
             all_content.extend(reddit_content)
             stats.scraped_reddit = len(reddit_content)
             logger.info(f"Scraped {len(reddit_content)} Reddit posts")
-        else:
-            logger.warning("Reddit scraper not available (check credentials)")
+        except Exception as e:
+            logger.warning(f"Reddit scraper not available or failed: {e}")
     
     if scrape_blogs:
         logger.info("Step 1b: Scraping blogs...")

@@ -6,27 +6,27 @@ AI-powered Toronto restaurant discovery based on real conversations from Reddit 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           OFFLINE ETL PIPELINE                               │
-│                        (Runs daily via cron)                                 │
+│                           OFFLINE ETL PIPELINE                              │
+│                        (Runs daily via cron)                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
+│                                                                             │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌────────────┐ │
 │  │   SCRAPE     │───▶│   EXTRACT    │───▶│   ENRICH     │───▶│ VECTORIZE  │ │
 │  │ Reddit/Blogs │    │  LLM (Groq)  │    │ Google Maps  │    │  OpenAI    │ │
 │  └──────────────┘    └──────────────┘    └──────────────┘    └────────────┘ │
-│                                                                      │       │
-│                              ┌────────────────────────────────┐      │       │
-│                              │         SCORE & STORE          │◀─────┘       │
-│                              │   Supabase (PostgreSQL +       │              │
-│                              │   pgvector)                    │              │
-│                              └────────────────────────────────┘              │
+│                                                                      │      │
+│                              ┌────────────────────────────────┐      │      │
+│                              │         SCORE & STORE          │◀─────┘      │
+│                              │   Supabase (PostgreSQL +       │             │
+│                              │   pgvector)                    │             │
+│                              └────────────────────────────────┘             │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                          REAL-TIME API PIPELINE                              │
-│                       (Handles user requests)                                │
+│                          REAL-TIME API PIPELINE                             │
+│                       (Handles user requests)                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
+│                                                                             │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌────────────┐ │
 │  │   Frontend   │───▶│   FastAPI    │───▶│  Embed Query │───▶│  Vector    │ │
 │  │   (React)    │    │   Server     │    │   (OpenAI)   │    │  Search    │ │
