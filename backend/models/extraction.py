@@ -1,36 +1,20 @@
 """LLM extraction models."""
-
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
-
-from .enums import SourceType, SentimentLabel
-
+from .enums import SentimentLabel
 
 class ExtractedRestaurant(BaseModel):
-    """Restaurant data extracted by LLM from text."""
-    name: str = Field(..., description="Restaurant name")
-    vibe: Optional[str] = Field(None, description="Atmosphere description")
+    """Data identified by AI within a text block."""
+    name: str
+    vibe: Optional[str] = None
     cuisine_tags: List[str] = Field(default_factory=list)
     recommended_dishes: List[str] = Field(default_factory=list)
-    price_hint: Optional[str] = Field(None, description="Price mentions")
-    sentiment: Optional[str] = Field(None, description="Overall sentiment")
-
+    price_hint: Optional[str] = None
+    sentiment: Optional[str] = None
 
 class SentimentAnalysis(BaseModel):
-    """Sentiment analysis result from LLM."""
-    overall_score: float = Field(..., ge=-1.0, le=1.0, description="-1 to 1 sentiment")
+    """Overall sentiment for a text block or specific mention."""
+    overall_score: float = Field(..., ge=-1.0, le=1.0)
     label: SentimentLabel
-    aspects: Dict[str, float] = Field(
-        default_factory=dict,
-        description="Aspect scores: food, service, ambiance, value"
-    )
+    aspects: Dict[str, float] = Field(default_factory=dict)
     summary: Optional[str] = None
-
-
-class ExtractionResult(BaseModel):
-    """Full extraction result from LLM processing."""
-    restaurants: List[ExtractedRestaurant]
-    sentiment: Optional[SentimentAnalysis] = None
-    raw_content: str
-    source_url: str
-    source_type: SourceType

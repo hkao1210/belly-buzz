@@ -5,12 +5,10 @@ Pydantic models for the ETL pipeline and API.
 """
 
 from .enums import SourceType, SentimentLabel
-from .social import RedditPost, ScrapedContent
-from .extraction import ExtractedRestaurant, SentimentAnalysis, ExtractionResult
-from .google import GooglePlaceData
-from .scoring import RestaurantScores
-from .database import SocialMention, Restaurant
-from .api import Review, RestaurantResponse, SearchResponse
+from .extraction import ExtractedRestaurant, SentimentAnalysis
+from .restaurant import Restaurant
+from .metrics import RestaurantMetrics
+from scrapedcontent import ScrapedContent
 
 __all__ = [
     # Enums
@@ -22,16 +20,7 @@ __all__ = [
     # Extraction
     "ExtractedRestaurant",
     "SentimentAnalysis",
-    "ExtractionResult",
-    # Google
-    "GooglePlaceData",
     # Scoring
     "RestaurantScores",
     # Database
-    "SocialMention",
-    "Restaurant",
-    # API
-    "Review",
-    "RestaurantResponse",
-    "SearchResponse",
 ]
