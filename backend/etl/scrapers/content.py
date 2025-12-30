@@ -22,34 +22,11 @@ from dateutil import parser as date_parser
 from dotenv import load_dotenv
 from shared.models import SourceType
 import trafilatura
-
+from shared.models import ScrapedContent
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-
-# =============================================================================
-# MODELS (or import from shared.models.py)
-# =============================================================================
-
-@dataclass
-class ScrapedContent:
-    """Represents scraped content from any source."""
-    source_type: SourceType
-    source_url: str
-    title: str
-    raw_text: str
-    source_id: Optional[str] = None
-    author: Optional[str] = None
-    subreddit: Optional[str] = None  # For Reddit
-    reddit_score: Optional[int] = None
-    reddit_num_comments: Optional[int] = None
-    posted_at: Optional[datetime] = None
-    scraped_at: Optional[datetime] = None
-
-    def __post_init__(self):
-        if self.scraped_at is None:
-            self.scraped_at = datetime.now()
 
 
 # =============================================================================

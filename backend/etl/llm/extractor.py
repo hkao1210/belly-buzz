@@ -1,13 +1,15 @@
 """
 LLM-Powered Restaurant Extraction
 =================================
-Uses Groq/Llama to extract restaurant data and sentiment from text.
+Uses Groq/Llama-3.1-8b to extract restaurant data and sentiment.
+Conforms strictly to shared.models.
 """
 
 import os
 import json
+import re
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Tuple
 
 from groq import Groq
 from dotenv import load_dotenv
@@ -17,60 +19,45 @@ from shared.models import (
     SentimentAnalysis,
     SentimentLabel,
     ScrapedContent,
+    SourceType,
 )
 
 load_dotenv()
-
 logger = logging.getLogger(__name__)
 
-
 # =============================================================================
-# PROMPTS
+# PROMPTS (Optimized for Llama 3.1)
 # =============================================================================
 
-EXTRACTION_PROMPT = """You are a Toronto restaurant data extractor. Extract restaurant information from this text.
+EXTRACTION_PROMPT = """Extract Toronto restaurants from the text. 
 
-For EACH restaurant mentioned in Toronto, extract:
-- name: The exact restaurant name (be precise)
-- vibe: A short description of the atmosphere/vibe (e.g., "cozy date night spot", "casual family-friendly", "upscale fine dining", "trendy brunch spot")
-- cuisine_tags: List of cuisine types (e.g., ["Japanese", "Ramen"], ["Italian", "Pizza"], ["Thai", "Southeast Asian"])
-- recommended_dishes: Specific dishes mentioned positively (e.g., ["Khao Soi", "Pad Thai", "Mango Sticky Rice"])
-- price_hint: Any price mentions (e.g., "affordable", "splurge", "$$", "under $20")
-- sentiment: Overall sentiment about this restaurant ("positive", "negative", "neutral", "mixed")
-
-IMPORTANT:
-- Only extract REAL restaurants in Toronto, Canada
-- Be precise with restaurant names (include "The" if part of name)
-- Extract cuisine_tags that are specific (e.g., "Ramen" not just "Asian")
-- Include specific dishes if mentioned, not generic ones
-
-TEXT TO ANALYZE:
-{content}
-
-Return ONLY valid JSON array. No explanation, no markdown:
-[{{"name": "...", "vibe": "...", "cuisine_tags": [...], "recommended_dishes": [...], "price_hint": "...", "sentiment": "..."}}]
-
-If no Toronto restaurants found, return: []"""
-
-
-SENTIMENT_PROMPT = """Analyze the sentiment of this restaurant review/discussion.
-
-Provide:
-1. overall_score: A score from -1.0 (very negative) to 1.0 (very positive)
-2. label: One of "positive", "negative", "neutral", or "mixed"
-3. aspects: Rate each aspect from -1.0 to 1.0 if mentioned:
-   - food: Quality and taste of food
-   - service: Staff friendliness and attentiveness  
-   - ambiance: Atmosphere, decor, noise level
-   - value: Price-to-quality ratio
-4. summary: One sentence summary of the sentiment
+For EACH restaurant, provide:
+- name: Official name
+- vibe: Short mood description (e.g. "upscale date night", "casual cheap eats")
+- cuisine_tags: List of specific cuisines
+- recommended_dishes: List of specific dishes mentioned
+- price_hint: e.g. "$$", "expensive", "under $15"
+- sentiment: "positive", "negative", "neutral", or "mixed"
 
 TEXT:
 {content}
 
-Return ONLY valid JSON:
-{{"overall_score": 0.8, "label": "positive", "aspects": {{"food": 0.9, "service": 0.7}}, "summary": "..."}}"""
+Return ONLY a JSON array:
+[{{"name": "...", "vibe": "...", "cuisine_tags": [], "recommended_dishes": [], "price_hint": "...", "sentiment": "..."}}]
+If none, return []."""
 
+SENTIMENT_PROMPT = """Analyze the overall sentiment of this food review/post.
+
+Return ONLY a JSON object:
+{{
+  "overall_score": 0.8, 
+  "label": "positive", 
+  "aspects": {{"food": 0.9, "service": 0.5, "vibe": 0.8}}, 
+  "summary": "Short summary here"
+}}
+
+TEXT:
+{content}"""
 
 # =============================================================================
 # EXTRACTOR CLASS
@@ -78,23 +65,40 @@ Return ONLY valid JSON:
 
 class RestaurantExtractor:
     """
-    Uses Groq LLM to extract restaurant data and analyze sentiment.
+    Handles LLM communication to turn raw text into structured restaurant data.
     """
     
     def __init__(self):
-        self.client = self._init_groq()
+        self.api_key = os.getenv("GROQ_API_KEY")
         self.model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+        self.client = self._init_client()
     
-    def _init_groq(self) -> Optional[Groq]:
-        """Initialize Groq client."""
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            logger.warning("GROQ_API_KEY not set")
+    def _init_client(self) -> Optional[Groq]:
+        if not self.api_key:
+            logger.warning("GROQ_API_KEY not found in environment")
             return None
-        return Groq(api_key=api_key)
+        return Groq(api_key=self.api_key)
     
-    def _call_llm(self, prompt: str, max_tokens: int = 2000) -> Optional[str]:
-        """Make a call to Groq LLM."""
+    def _clean_json_response(self, text: str) -> str:
+        """
+        Extremely robust JSON extractor. 
+        Handles markdown blocks, conversational filler, and trailing commas.
+        """
+        if not text:
+            return ""
+        
+        # 1. Try to find the first '[' or '{' and the last ']' or '}'
+        # This ignores LLM "Sure, here is your JSON:" chatter
+        match = re.search(r'(\[.*\]|\{.*\})', text, re.DOTALL)
+        if match:
+            text = match.group(1)
+            
+        # 2. Basic Markdown cleanup
+        text = text.replace("```json", "").replace("```", "").strip()
+        
+        return text
+
+    def _call_groq(self, prompt: str, max_tokens: int = 2000) -> Optional[str]:
         if not self.client:
             return None
         
@@ -102,178 +106,107 @@ class RestaurantExtractor:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
+                temperature=0.1, # Keep it deterministic for extraction
                 max_tokens=max_tokens,
+                response_format={"type": "json_object"} if "object" in prompt.lower() else None
             )
-            return response.choices[0].message.content.strip()
+            return response.choices[0].message.content
         except Exception as e:
-            logger.error(f"LLM call failed: {e}")
+            logger.error(f"Groq API call failed: {e}")
             return None
-    
-    def _parse_json(self, text: str) -> Any:
-        """Parse JSON from LLM response, handling markdown code blocks."""
-        if not text:
-            return None
-        
-        # Remove markdown code blocks if present
-        if text.startswith("```"):
-            lines = text.split("\n")
-            # Remove first line (```json) and last line (```)
-            text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
-        
-        # Handle ```json prefix
-        if text.startswith("json"):
-            text = text[4:].strip()
-        
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON parse error: {e}")
-            logger.debug(f"Raw text: {text[:200]}...")
-            return None
-    
-    def extract_restaurants(
-        self,
-        content: ScrapedContent,
-        max_content_length: int = 8000,
-    ) -> List[ExtractedRestaurant]:
-        """
-        Extract restaurant mentions from scraped content.
-        
-        Args:
-            content: Scraped content to analyze
-            max_content_length: Max chars to send to LLM
-            
-        Returns:
-            List of extracted restaurants
-        """
-        if not self.client:
-            logger.warning("Groq client not available, skipping extraction")
-            return []
-        
-        # Truncate content if too long
-        text = content.raw_text[:max_content_length]
-        
-        prompt = EXTRACTION_PROMPT.format(content=text)
-        response = self._call_llm(prompt)
+
+    def extract_restaurants(self, content: ScrapedContent) -> List[ExtractedRestaurant]:
+        """Extracts list of restaurants and their attributes."""
+        # Truncate to ~6000 chars to stay safe with context limits and tokens
+        prompt = EXTRACTION_PROMPT.format(content=content.raw_text[:6000])
+        response = self._call_groq(prompt)
         
         if not response:
             return []
         
-        parsed = self._parse_json(response)
-        if not parsed or not isinstance(parsed, list):
-            return []
-        
-        restaurants = []
-        for item in parsed:
-            try:
-                restaurant = ExtractedRestaurant(
-                    name=item.get("name", ""),
-                    vibe=item.get("vibe"),
+        cleaned = self._clean_json_response(response)
+        try:
+            data = json.loads(cleaned)
+            if not isinstance(data, list):
+                # Sometimes LLM wraps the list in an object
+                if isinstance(data, dict) and "restaurants" in data:
+                    data = data["restaurants"]
+                else:
+                    return []
+
+            results = []
+            for item in data:
+                if not item.get("name"): continue
+                
+                results.append(ExtractedRestaurant(
+                    name=item.get("name"),
+                    vibe=item.get("vibe", ""),
                     cuisine_tags=item.get("cuisine_tags", []),
                     recommended_dishes=item.get("recommended_dishes", []),
-                    price_hint=item.get("price_hint"),
-                    sentiment=item.get("sentiment"),
-                )
-                if restaurant.name:  # Only add if name exists
-                    restaurants.append(restaurant)
-            except Exception as e:
-                logger.warning(f"Failed to parse restaurant: {e}")
-                continue
-        
-        logger.info(f"Extracted {len(restaurants)} restaurants from {content.source_url}")
-        return restaurants
-    
-    def analyze_sentiment(
-        self,
-        content: ScrapedContent,
-        max_content_length: int = 4000,
-    ) -> Optional[SentimentAnalysis]:
-        """
-        Analyze sentiment of content.
-        
-        Args:
-            content: Scraped content to analyze
-            max_content_length: Max chars to send to LLM
-            
-        Returns:
-            SentimentAnalysis or None
-        """
-        if not self.client:
-            return None
-        
-        text = content.raw_text[:max_content_length]
-        prompt = SENTIMENT_PROMPT.format(content=text)
-        response = self._call_llm(prompt, max_tokens=500)
+                    price_hint=item.get("price_hint", ""),
+                    sentiment=item.get("sentiment", "neutral")
+                ))
+            return results
+        except Exception as e:
+            logger.error(f"Failed to parse extraction JSON: {e}")
+            return []
+
+    def analyze_sentiment(self, content: ScrapedContent) -> Optional[SentimentAnalysis]:
+        """Analyzes the overall tone of the post."""
+        prompt = SENTIMENT_PROMPT.format(content=content.raw_text[:4000])
+        response = self._call_groq(prompt, max_tokens=500)
         
         if not response:
             return None
-        
-        parsed = self._parse_json(response)
-        if not parsed or not isinstance(parsed, dict):
-            return None
-        
-        try:
-            label_str = parsed.get("label", "neutral").lower()
-            label = SentimentLabel(label_str) if label_str in [e.value for e in SentimentLabel] else SentimentLabel.NEUTRAL
             
+        cleaned = self._clean_json_response(response)
+        try:
+            data = json.loads(cleaned)
+            
+            # Map string label to Enum
+            label_val = data.get("label", "neutral").lower()
+            try:
+                label = SentimentLabel(label_val)
+            except ValueError:
+                label = SentimentLabel.NEUTRAL
+
             return SentimentAnalysis(
-                overall_score=float(parsed.get("overall_score", 0)),
+                overall_score=float(data.get("overall_score", 0.0)),
                 label=label,
-                aspects=parsed.get("aspects", {}),
-                summary=parsed.get("summary"),
+                aspects=data.get("aspects", {}),
+                summary=data.get("summary", "")
             )
         except Exception as e:
-            logger.warning(f"Failed to parse sentiment: {e}")
+            logger.error(f"Failed to parse sentiment JSON: {e}")
             return None
-    
-    def process_content(
-        self,
-        content: ScrapedContent,
-    ) -> tuple[List[ExtractedRestaurant], Optional[SentimentAnalysis]]:
+
+    def process_content(self, content: ScrapedContent) -> Tuple[List[ExtractedRestaurant], Optional[SentimentAnalysis]]:
         """
-        Full processing: extract restaurants and analyze sentiment.
+        Coordinates full processing of a single piece of scraped content.
+        Used by ingest.py.
+        """
+        logger.info(f"LLM Processing: {content.source_url}")
         
-        Args:
-            content: Scraped content
-            
-        Returns:
-            Tuple of (restaurants, sentiment)
-        """
         restaurants = self.extract_restaurants(content)
-        sentiment = self.analyze_sentiment(content) if restaurants else None
         
+        # Only run sentiment analysis if we actually found restaurants to avoid wasting tokens
+        sentiment = None
+        if restaurants:
+            sentiment = self.analyze_sentiment(content)
+            
         return restaurants, sentiment
 
-
 # =============================================================================
-# CLI for testing
+# SIMPLE TEST
 # =============================================================================
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    
-    extractor = RestaurantExtractor()
-    
-    # Test extraction
-    test_content = ScrapedContent(
-        source_type="reddit",
-        source_url="https://reddit.com/test",
-        raw_text="""
-        Just tried Pai Northern Thai Kitchen on Duncan St for the first time - 
-        the khao soi was incredible! Rich, creamy curry with perfectly crispy noodles.
-        Also had the pad thai which was solid but the khao soi is the star.
-        
-        The place was packed even on a Tuesday. Definitely recommend going early
-        to avoid the wait. Great date night spot, cozy atmosphere.
-        
-        Also been meaning to try Seven Lives in Kensington for their fish tacos.
-        Heard they're the best in the city.
-        """,
+    load_dotenv()
+    ex = RestaurantExtractor()
+    test = ScrapedContent(
+        source_type=SourceType.BLOG,
+        source_url="http://test.com",
+        raw_text="Pai Northern Thai is the best spot for Khao Soi in Toronto. The vibe is super busy and energetic. Also loved the wings at Duff's.",
+        title="Best Wings and Thai"
     )
-    
-    restaurants = extractor.extract_restaurants(test_content)
-    for r in restaurants:
-        print(f"\n{r.name}: {r.cuisine_tags}")
-        print(f"  Vibe: {r.vibe}")
-        print(f"  Dishes: {r.recommended_dishes}")
-
+    res, sent = ex.process_content(test)
+    print(f"Found {len(res)} restaurants. Sentiment: {sent.label if sent else 'N/A'}")
