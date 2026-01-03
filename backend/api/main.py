@@ -151,7 +151,6 @@ async def get_restaurant(restaurant_id: str):
         logger.error("Supabase client not available")
         raise HTTPException(status_code=500, detail="Database not configured")
 
-    # Try ID search with join
     query = supabase.table("restaurants").select("*, restaurant_metrics(*)").eq("id", restaurant_id)
     res = query.execute()
     rows = getattr(res, "data", []) or []
@@ -176,4 +175,46 @@ async def trending(limit: int = 10):
 
     res = supabase.table("restaurants").select("*, restaurant_metrics!inner(*)").order("restaurant_metrics(buzz_score)", desc=True).limit(limit).execute()
     rows = getattr(res, "data", []) or []
+    return [db_row_to_response(dict(row)) for row in rows]
+
+
+@app.get("/cuisines", response_model=List[str])
+async def get_cuisines():
+    """Get all unique cuisine tags from restaurants."""
+    supabase: Optional[Client] = get_supabase()
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    
+    try:
+        res = supabase.table("restaurants").select("cuisine_tags").execute()
+        rows = getattr(res, "data", []) or []
+        
+        # Flatten and deduplicate cuisine tags
+        all_tags = set()
+        for row in rows:
+            tags = row.get("cuisine_tags", [])
+            if tags:
+                if isinstance(tags, list):
+                    all_tags.update(tags)
+                elif isinstance(tags, str):
+                    all_tags.update(tags.split(','))
+        
+        return sorted(list(all_tags))
+    except Exception as e:
+        logger.error(f"Failed to fetch cuisines: {e}")
+        return []
+
+@app.get("/trending-queries", response_model=List[str])
+async def get_trending_queries():
+    """Get trending search queries (placeholder - returns popular cuisines for now)."""
+    # TODO: Track actual user searches and return trending queries
+    return [
+        "best ramen",
+        "date night restaurants", 
+        "cheap eats",
+        "italian pasta",
+        "vegan options",
+        "brunch spots",
+        "sushi"
+    ]
     return [db_row_to_response(dict(row)) for row in rows]
