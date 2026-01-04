@@ -8,6 +8,7 @@ Conforms strictly to shared.models.
 import os
 import json
 import re
+import time
 import logging
 from typing import List, Optional, Dict, Tuple
 
@@ -72,6 +73,17 @@ class RestaurantExtractor:
         self.api_key = os.getenv("GROQ_API_KEY")
         self.model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
         self.client = self._init_client()
+        self.last_request_time = 0  # Track last API call for rate limiting
+        self.min_interval = 2.1  # 30 RPM = ~2 sec between calls, add 0.1 buffer
+    
+    def _rate_limit(self):
+        """Enforce rate limit: 30 requests/minute = 2 sec between calls."""
+        elapsed = time.time() - self.last_request_time
+        if elapsed < self.min_interval:
+            sleep_time = self.min_interval - elapsed
+            logger.info(f"[extractor] Rate limiting: sleeping {sleep_time:.2f}s")
+            time.sleep(sleep_time)
+        self.last_request_time = time.time()
     
     def _init_client(self) -> Optional[Groq]:
         if not self.api_key:
@@ -98,33 +110,60 @@ class RestaurantExtractor:
         
         return text
 
-    def _call_groq(self, prompt: str, max_tokens: int = 2000) -> Optional[str]:
+    def _call_groq(self, prompt: str, max_tokens: int = 2000, retries: int = 3) -> Optional[str]:
         if not self.client:
             return None
         
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1, # Keep it deterministic for extraction
-                max_tokens=max_tokens,
-                response_format={"type": "json_object"} if "object" in prompt.lower() else None
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            logger.error(f"Groq API call failed: {e}")
-            return None
+        for attempt in range(retries):
+            try:
+                self._rate_limit()  # Enforce rate limit before each call
+                
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.1, # Keep it deterministic for extraction
+                    max_tokens=max_tokens,
+                    response_format={"type": "json_object"} if "object" in prompt.lower() else None
+                )
+                content = response.choices[0].message.content
+                if not content or content.strip() == "":
+                    if attempt < retries - 1:
+                        logger.warning(f"[extractor] Empty response (attempt {attempt+1}/{retries}), retrying...")
+                        time.sleep(1)  # Wait before retry
+                        continue
+                    else:
+                        logger.warning(f"[extractor] Empty response after {retries} retries (likely rate limited)")
+                return content
+                
+            except Exception as e:
+                if attempt < retries - 1:
+                    logger.warning(f"[extractor] API call failed (attempt {attempt+1}/{retries}): {e}")
+                    time.sleep(2)
+                    continue
+                else:
+                    logger.error(f"[extractor] Groq API call failed after {retries} retries: {e}")
+                    return None
+        
+        return None
 
     def extract_restaurants(self, content: ScrapedContent) -> List[ExtractedRestaurant]:
         """Extracts list of restaurants and their attributes."""
+        logger.info(f"[extractor] Starting restaurant extraction from: {content.source_url}")
         # Truncate to ~6000 chars to stay safe with context limits and tokens
         prompt = EXTRACTION_PROMPT.format(content=content.raw_text[:6000])
+        logger.info(f"[extractor] Calling Groq API for extraction...")
         response = self._call_groq(prompt)
+        logger.info(f"[extractor] Groq response received, parsing...")
         
-        if not response:
+        if not response or response.strip() == "":
+            logger.warning(f"[extractor] Empty response from Groq for {content.source_url}")
             return []
         
         cleaned = self._clean_json_response(response)
+        if not cleaned or cleaned.strip() == "":
+            logger.warning(f"[extractor] Cleaned response was empty after JSON extraction")
+            return []
+            
         try:
             data = json.loads(cleaned)
             if not isinstance(data, list):
@@ -132,6 +171,7 @@ class RestaurantExtractor:
                 if isinstance(data, dict) and "restaurants" in data:
                     data = data["restaurants"]
                 else:
+                    logger.warning(f"[extractor] Response not a list: {type(data)}")
                     return []
 
             results = []
@@ -146,9 +186,10 @@ class RestaurantExtractor:
                     price_hint=item.get("price_hint", ""),
                     sentiment=item.get("sentiment", "neutral")
                 ))
+            logger.info(f"[extractor] Extracted {len(results)} restaurants")
             return results
         except Exception as e:
-            logger.error(f"Failed to parse extraction JSON: {e}")
+            logger.error(f"[extractor] Failed to parse extraction JSON: {e} | cleaned_response: {cleaned[:200]}")
             return []
 
     def analyze_sentiment(self, content: ScrapedContent) -> Optional[SentimentAnalysis]:
