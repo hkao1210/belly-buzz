@@ -94,14 +94,7 @@ class ContentScraper:
     """Scrapes Toronto food blogs using RSS feeds + trafilatura."""
 
     FOOD_KEYWORDS = frozenset({
-        "restaurant", "food", "eat", "dining", "chef", "menu", "brunch",
-        "dinner", "lunch", "cafe", "coffee", "bar", "cocktail", "pizza",
-        "sushi", "ramen", "taco", "burger", "bakery", "dessert", "patio",
-        "kitchen", "cuisine", "takeout", "delivery", "reservation", "opening",
-        "diner", "bistro", "eatery", "gastropub", "foodie", "michelin",
-        "taste", "dim sum", "noodle", "bbq", "steakhouse", "vegan",
-        "vegetarian", "thai", "indian", "italian", "mexican", "korean",
-        "japanese", "chinese", "vietnamese", "greek", "middle eastern",
+        "eat_drink"
     })
 
     def __init__(self):
