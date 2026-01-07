@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 from .schemas import RestaurantResponse, SearchResponse, Review
 from shared.embeddings.embeddings import get_embedding_service
-from .db import get_supabase
+from .db import get_supabase, set_supabase_client
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -41,6 +41,15 @@ class SortBy(str, Enum):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Warm up services on startup."""
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SECRET_KEY")
+    if supabase_url and supabase_key:
+        client = create_client(supabase_url, supabase_key)
+        set_supabase_client(client)
+        logger.info("Supabase client initialized")
+    else:
+        logger.warning("Supabase credentials not found in environment")
+    
     embedding_service.load()
     logger.info("Belly-Buzz API ready!")
     yield
@@ -80,6 +89,11 @@ def db_row_to_response(row: Mapping[str, Any]) -> RestaurantResponse:
     sentiment = metrics.get("sentiment_score") if isinstance(metrics, dict) else None
     sentiment = sentiment or row.get("sentiment_score", 0)
 
+    # Parse cuisine_tags if it's a string, otherwise default to empty list
+    cuisine_tags = row.get("cuisine_tags", [])
+    if isinstance(cuisine_tags, str):
+        cuisine_tags = [tag.strip() for tag in cuisine_tags.split(",")] if cuisine_tags else []
+    
     return RestaurantResponse(
         id=str(row["id"]),
         name=row["name"],
@@ -90,6 +104,7 @@ def db_row_to_response(row: Mapping[str, Any]) -> RestaurantResponse:
         google_maps_url=row.get("google_maps_url"),
         price_tier=row.get("price_tier", 2),
         vibe=row.get("vibe"),
+        cuisine_tags=cuisine_tags,
         buzz_score=buzz,
         sentiment_score=sentiment,
         total_mentions=metrics.get("total_mentions") or row.get("total_mentions", 0),
