@@ -74,7 +74,7 @@ class RestaurantExtractor:
         self.model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
         self.client = self._init_client()
         self.last_request_time = 0  # Track last API call for rate limiting
-        self.min_interval = 2.1  # 30 RPM = ~2 sec between calls, add 0.1 buffer
+        self.min_interval = 3.0  # 30 RPM = 2 sec, but adding 1 sec buffer for retries/429s
     
     def _rate_limit(self):
         """Enforce rate limit: 30 requests/minute = 2 sec between calls."""
@@ -110,7 +110,7 @@ class RestaurantExtractor:
         
         return text
 
-    def _call_groq(self, prompt: str, max_tokens: int = 2000, retries: int = 3) -> Optional[str]:
+    def _call_groq(self, prompt: str, max_tokens: int = 2000, retries: int = 3, force_json: bool = False) -> Optional[str]:
         if not self.client:
             return None
         
@@ -123,7 +123,7 @@ class RestaurantExtractor:
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.1, # Keep it deterministic for extraction
                     max_tokens=max_tokens,
-                    response_format={"type": "json_object"} if "object" in prompt.lower() else None
+                    response_format={"type": "json_object"} if force_json or "object" in prompt.lower() else None
                 )
                 content = response.choices[0].message.content
                 if not content or content.strip() == "":
@@ -138,7 +138,8 @@ class RestaurantExtractor:
             except Exception as e:
                 if attempt < retries - 1:
                     logger.warning(f"[extractor] API call failed (attempt {attempt+1}/{retries}): {e}")
-                    time.sleep(2)
+                    # Sleep longer on retry to avoid hitting rate limits
+                    time.sleep(5)
                     continue
                 else:
                     logger.error(f"[extractor] Groq API call failed after {retries} retries: {e}")
