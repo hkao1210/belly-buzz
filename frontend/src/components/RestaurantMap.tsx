@@ -94,9 +94,11 @@ export function RestaurantMap({
                     {'$'.repeat(restaurant.price_tier)}
                   </span>
                   <span>•</span>
-                  <span>★ {restaurant.rating.toFixed(1)}</span>
+                  <span>🔥 {restaurant.buzz_score.toFixed(1)}</span>
+                  <span>•</span>
+                  <span>{(restaurant.sentiment_score * 100).toFixed(0)}% 😊</span>
                 </div>
-                {restaurant.cuisine_tags.length > 0 && (
+                {restaurant.cuisine_tags && restaurant.cuisine_tags.length > 0 && (
                   <p className="text-xs text-gray-500 mt-1">
                     {restaurant.cuisine_tags.slice(0, 3).join(' • ')}
                   </p>

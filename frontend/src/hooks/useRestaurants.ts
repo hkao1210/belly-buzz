@@ -19,8 +19,15 @@ async function fetchRestaurants(params: SearchParams): Promise<SearchResponse> {
   if (params.sort_by) url.searchParams.set('sort_by', params.sort_by);
   if (params.sort_order) url.searchParams.set('sort_order', params.sort_order);
   if (params.limit) url.searchParams.set('limit', params.limit.toString());
+  
+  const urlString = url.toString();
+  console.log("API_BASE:", API_BASE);
+  console.log("Full URL:", urlString);
+  console.log("About to fetch:", urlString);
 
-  const response = await fetch(url.toString());
+  const response = await fetch(urlString);
+  console.log("Response URL:", response.url);
+  console.log("Response status:", response.status);
   if (!response.ok) {
     throw new Error('Failed to fetch restaurants');
   }

@@ -29,7 +29,9 @@ function PriceTier({ tier }: { tier: number }) {
 /**
  * Star rating display component.
  */
-function Rating({ rating }: { rating: number }) {
+function Rating({ rating }: { rating?: number }) {
+  if (!rating) return null;
+  
   return (
     <div className="flex items-center gap-1.5">
       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -58,6 +60,29 @@ function BuzzScore({ score }: { score: number }) {
 }
 
 /**
+ * Sentiment score badge component.
+ */
+function SentimentBadge({ score }: { score: number }) {
+  const getColor = () => {
+    if (score >= 0.7) return 'bg-green-500';
+    if (score >= 0.4) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+  
+  const getLabel = () => {
+    if (score >= 0.7) return '😊';
+    if (score >= 0.4) return '😐';
+    return '😞';
+  };
+  
+  return (
+    <Badge className={`${getColor()} text-white border-0`}>
+      {getLabel()} {(score * 100).toFixed(0)}%
+    </Badge>
+  );
+}
+
+/**
  * Restaurant card component with Neobrutalism styling.
  * Displays restaurant info in a bold, eye-catching card format.
  */
@@ -78,16 +103,11 @@ export function RestaurantCard({ restaurant, onClick }: RestaurantCardProps) {
                   Hot
                 </Badge>
               )}
-              {restaurant.is_new && (
-                <Badge variant="default" className="flex-shrink-0 bg-green-500 text-white">
-                  New
-                </Badge>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <BuzzScore score={restaurant.buzz_score} />
-            <Rating rating={restaurant.rating} />
+            <SentimentBadge score={restaurant.sentiment_score} />
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -99,18 +119,20 @@ export function RestaurantCard({ restaurant, onClick }: RestaurantCardProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         {/* Cuisine Tags */}
-        <div className="flex flex-wrap gap-1.5">
-          {restaurant.cuisine_tags.slice(0, 4).map((tag) => (
-            <Badge key={tag} variant="default" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-          {restaurant.cuisine_tags.length > 4 && (
-            <Badge variant="neutral" className="text-xs">
-              +{restaurant.cuisine_tags.length - 4}
-            </Badge>
-          )}
-        </div>
+        {restaurant.cuisine_tags && restaurant.cuisine_tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {restaurant.cuisine_tags.slice(0, 4).map((tag) => (
+              <Badge key={tag} variant="default" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {restaurant.cuisine_tags.length > 4 && (
+              <Badge variant="neutral" className="text-xs">
+                +{restaurant.cuisine_tags.length - 4}
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Price & Metrics Row */}
         <div className="flex items-center justify-between">
@@ -120,11 +142,6 @@ export function RestaurantCard({ restaurant, onClick }: RestaurantCardProps) {
               <MessageCircle className="h-3.5 w-3.5" />
               <span>{restaurant.total_mentions}</span>
             </div>
-            {restaurant.sources.length > 0 && (
-              <span className="text-xs">
-                via {restaurant.sources.slice(0, 2).join(', ')}
-              </span>
-            )}
           </div>
         </div>
 

@@ -29,8 +29,7 @@ type SortOption = {
 
 const SORT_OPTIONS: SortOption[] = [
   { value: 'buzz_score', label: 'Buzz', icon: <Flame className="h-3 w-3" /> },
-  { value: 'rating', label: 'Rating', icon: <Star className="h-3 w-3" /> },
-  { value: 'viral_score', label: 'Viral', icon: <TrendingUp className="h-3 w-3" /> },
+  { value: 'sentiment_score', label: 'Sentiment', icon: <Star className="h-3 w-3" /> },
   { value: 'total_mentions', label: 'Mentions', icon: <MessageCircle className="h-3 w-3" /> },
 ];
 
