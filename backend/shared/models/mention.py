@@ -30,6 +30,7 @@ class SocialMention(BaseModel):
     dishes_mentioned: List[str] = Field(default_factory=list)
     price_mentioned: Optional[str] = None
     vibe_extracted: Optional[str] = None
+    summary: Optional[str] = None
 
     engagement_score: float = 0.0
     posted_at: Optional[datetime] = None

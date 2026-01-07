@@ -94,14 +94,7 @@ async def run_pipeline(limit: int = 50):
             logger.info(f"Looking up place: {ext.name}")
             place = enricher.find_place(ext.name)
             logger.info(f"Place lookup done for {ext.name}: {place.place_id if place else 'None'}")
-            
-            # Use place_id as key if available, else restaurant name
             key = place.place_id if place else ext.name
-            
-            # Skip if already in queue (dedup)
-            if key in queue:
-                logger.info(f"Skipping duplicate: {key}")
-                continue
             
             if key not in queue:
                 queue[key] = {"ext": ext, "place": place, "mentions": []}
@@ -128,7 +121,12 @@ async def run_pipeline(limit: int = 50):
         try:
             ext, place, mentions = data["ext"], data["place"], data["mentions"]
             logger.info(f"Processing {ext.name} ({key}): {len(mentions)} mentions")
-            
+            sentiment = None
+            for item in raw_content:
+                extracted_list, sent = extractor.process_content(item)
+                if sent:
+                    sentiment = sent
+                    break
             buzz, sentiment = calculate_metrics(mentions)
 
             restaurant = Restaurant(
@@ -146,19 +144,12 @@ async def run_pipeline(limit: int = 50):
             )
 
             if supabase:
-                logger.info(f"Upserting restaurant {restaurant.name}...")
                 res_id = upsert_restaurant_core(supabase, restaurant)
                 if res_id:
-                    logger.info(f"Upserted restaurant with ID {res_id}, inserting metrics and mentions...")
                     upsert_metrics(supabase, RestaurantMetrics(
                         restaurant_id=res_id, buzz_score=buzz, sentiment_score=sentiment,
                         total_mentions=len(mentions), is_trending=(len(mentions) >= 2)
                     ))
                     for m in mentions: upsert_mention(supabase, m, res_id)
-                    logger.info(f"Successfully inserted {len(mentions)} mentions for {restaurant.name}")
-                else:
-                    logger.warning(f"Failed to upsert restaurant {restaurant.name} (no ID returned)")
-            else:
-                logger.warning(f"Supabase client is None, skipping insert for {restaurant.name}")
         except Exception as e:
-            logger.error(f"Failed to process {key}: {e}", exc_info=True)
+            logger.error(f"Failed to process {key}: {e}")
